@@ -1,0 +1,2 @@
+# The SDK core has no third-party dependencies. Tool dependencies are pulled in
+# per-extra (see extras_require in setup.py), never from here.
