@@ -7,18 +7,23 @@ CODEBASE_PATH = os.environ.get(
     default=os.path.join("src", "main"),
 )
 
-# This distribution owns exactly ONE leaf package, `alissa.sdk`. Everything
-# above it (`alissa`, `alissa.tools`, ...) is left as a PEP 420 namespace with
-# no __init__.py, so tool distributions installed through the extras below merge
-# their own alissa.tools.* subtrees into the same namespace. Adding an
-# __init__.py at any namespace level would claim it for this distribution and
-# shadow the tools.
-PACKAGE = "alissa.sdk"
+# This distribution owns two leaf packages under the alissa namespace:
+#   alissa.sdk    — the SDK surface + the distribution's version file
+#   alissa.utils  — shared helpers downstream alissa.* packages reuse
+# Everything above them (`alissa`, `alissa.tools`, ...) is left as a PEP 420
+# namespace with no __init__.py, so tool distributions installed through the
+# extras below merge their own alissa.tools.* subtrees into the same namespace.
+# Adding an __init__.py at any namespace level would claim it for this
+# distribution and shadow the tools.
+OWNED_PACKAGES = ["alissa.sdk", "alissa.utils"]
+
+# The distribution's version file lives beside the SDK leaf.
+VERSION_PACKAGE = "alissa.sdk"
 
 with open("requirements.txt", "r") as file:
     requirements = [line for line in file.read().splitlines() if line and not line.startswith("#")]
 
-version_filepath = os.path.join(CODEBASE_PATH, *PACKAGE.split("."), "version")
+version_filepath = os.path.join(CODEBASE_PATH, *VERSION_PACKAGE.split("."), "version")
 with open(version_filepath, "r") as file:
     version = file.read().strip()
 
@@ -37,7 +42,7 @@ with open("README.md") as file:
 # runtime's installed_tools() share one source of truth. Read it here without
 # importing the package (its deps may not be installed at build time).
 _tools_namespace: dict = {}
-_tools_filepath = os.path.join(CODEBASE_PATH, *PACKAGE.split("."), "_tools.py")
+_tools_filepath = os.path.join(CODEBASE_PATH, *VERSION_PACKAGE.split("."), "_tools.py")
 with open(_tools_filepath, "r") as file:
     exec(compile(file.read(), _tools_filepath, "exec"), _tools_namespace)
 
@@ -60,7 +65,7 @@ setup(
     author_email="support@alissa.app",
     packages=find_namespace_packages(
         where=CODEBASE_PATH,
-        include=[PACKAGE, f"{PACKAGE}.*"],
+        include=[pattern for pkg in OWNED_PACKAGES for pattern in (pkg, f"{pkg}.*")],
     ),
     package_dir={
         "": CODEBASE_PATH

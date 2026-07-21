@@ -19,7 +19,8 @@ namespace — tool distributions pulled in by extras merge their own
 
 ```
 alissa/                                  ← namespace (no __init__.py)
-├── sdk/               __init__.py        ← the SDK distribution owns this leaf
+├── sdk/               __init__.py        ← the SDK distribution: surface + version file
+├── utils/             __init__.py        ← the SDK distribution: shared helpers (utils.version)
 └── tools/                               ← namespace
     └── github/
         └── reviewloop/  __init__.py      ← ships from alissa-tools-github-reviewloop
@@ -44,7 +45,8 @@ alissa-python-sdk/
 │   ├── requirements.txt        ← core deps (empty — the SDK core has none)
 │   ├── MANIFEST.in
 │   └── src/
-│       ├── main/alissa/sdk/    ← owned leaf package (+ plain-text `version` file)
+│       ├── main/alissa/sdk/    ← owned leaf: SDK surface (+ plain-text `version` file)
+│       ├── main/alissa/utils/  ← owned leaf: shared helpers (alissa.utils.version)
 │       └── test/test_alissa/   ← mirrors main as test_*
 ├── .github/workflows/          ← style / types / tests / wheel / publish (matrix: alissa)
 ├── check-style.sh  check-types.sh  tests-unit.sh  tests-coverage.sh
