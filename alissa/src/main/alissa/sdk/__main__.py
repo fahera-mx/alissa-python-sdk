@@ -1,8 +1,10 @@
-"""Console entry point for the Alissa Python SDK (``alissa-sdk``).
+"""Console entry point for the Alissa Python SDK (``alissa-py``).
 
-Named ``alissa-sdk`` — not ``alissa`` — on purpose: the ``alissa`` command is
-the Alissa by Fahera CLI (tasks, sessions, tmux queues), a separate tool this
-SDK does not shadow.
+The command is ``alissa-py`` — not ``alissa`` — on purpose: ``alissa`` is the
+Alissa by Fahera CLI (tasks, sessions, tmux queues), and the ``-py`` suffix
+marks this one, explicitly, as the Python SDK's counterpart. (A literal
+``alissa.py`` cannot be used: the console-script file ``bin/alissa.py`` would
+shadow the importable ``alissa`` package.)
 """
 import argparse
 
@@ -11,7 +13,7 @@ from . import __version__, installed_tools
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="alissa-sdk",
+        prog="alissa-py",
         description="Alissa Python SDK — anchors the 'alissa' namespace and its tool extras.",
     )
     parser.add_argument(
@@ -39,7 +41,7 @@ def main() -> None:
     print(f"alissa {__version__}")
     print("the Alissa Python SDK — anchors the 'alissa' namespace")
     print("install tools via extras, e.g.: pip install 'alissa[tools.github.reviewloop]'")
-    print("list installed tools: alissa-sdk --tools")
+    print("list installed tools: alissa-py --tools")
 
 
 if __name__ == "__main__":

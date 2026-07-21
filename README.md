@@ -59,8 +59,8 @@ python -m venv venv && source venv/bin/activate
 pip install -r requirements-develop.txt
 pip install -e ./alissa
 
-alissa-sdk                 # SDK version + how to add tools
-alissa-sdk --tools         # list installed alissa.tools.* packages
+alissa-py                  # SDK version + how to add tools
+alissa-py --tools          # list installed alissa.tools.* packages
 ```
 
 ## Checks

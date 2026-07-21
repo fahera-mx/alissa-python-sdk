@@ -50,15 +50,18 @@ pip install -e ./alissa
 
 | Command | Entry point |
 | --- | --- |
-| `alissa-sdk` | `alissa.sdk.__main__:main` |
+| `alissa-py` | `alissa.sdk.__main__:main` |
 
-`alissa-sdk` is deliberately **not** `alissa` — the `alissa` command is the
-Alissa by Fahera CLI, which this SDK does not shadow.
+The command is `alissa-py` — deliberately **not** `alissa`, which is the Alissa
+by Fahera CLI this SDK does not shadow. The `-py` suffix marks it, explicitly,
+as the Python SDK's counterpart. (A literal `alissa.py` can't be used: the
+console-script file `bin/alissa.py` would shadow the importable `alissa`
+package.)
 
 ```sh
-alissa-sdk              # SDK version + how to add tools
-alissa-sdk --tools      # list installed alissa.tools.* packages
-alissa-sdk --version
+alissa-py              # SDK version + how to add tools
+alissa-py --tools      # list installed alissa.tools.* packages
+alissa-py --version
 ```
 
 ## Using it

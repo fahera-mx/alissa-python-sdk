@@ -72,7 +72,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "alissa-sdk=alissa.sdk.__main__:main",
+            "alissa-py=alissa.sdk.__main__:main",
         ]
     },
     install_requires=requirements,
