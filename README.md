@@ -5,7 +5,7 @@ The single Python package that owns and anchors the `alissa` import namespace �
 
 ```sh
 pip install alissa                               # SDK core, zero third-party deps
-pip install 'alissa[tools.github.reviewloop]'    # + a tool, merged into alissa.tools.*
+pip install 'alissa[tools.github.revloop]'       # + a tool, merged into alissa.tools.*
 pip install 'alissa[all]'                        # + every tool
 ```
 
@@ -27,10 +27,12 @@ alissa/                                  ← namespace (no __init__.py)
 ```
 
 Each `alissa[tools.<area>.<name>]` extra maps to a separately published
-distribution (`alissa-tools-<area>-<name>`). Tools stay independently versioned
-and released; the SDK just curates which ones exist and pulls them in on demand.
-See [`alissa/README.md`](./alissa/README.md) for the full model and for how to
-add a new tool extra.
+distribution. Tools stay independently versioned and released; the SDK just
+curates which ones exist and pulls them in on demand. The mapping lives in a
+registry, so an extra name need not match its distribution name — today
+`tools.github.revloop` pulls `alissa-tools-github-reviewloop`, pending that
+package's rename. See [`alissa/README.md`](./alissa/README.md) for the full
+model and for how to add a new tool extra.
 
 ## Repository layout
 

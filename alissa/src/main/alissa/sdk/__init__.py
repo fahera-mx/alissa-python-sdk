@@ -6,7 +6,7 @@ It ships **no** ``__init__.py`` at the namespace levels (``alissa``,
 package. That keeps every namespace level a
 `PEP 420 <https://peps.python.org/pep-0420/>`_ implicit namespace package, so
 tool distributions pulled in through extras — for example
-``pip install 'alissa[tools.github.reviewloop]'`` — merge their own
+``pip install 'alissa[tools.github.revloop]'`` — merge their own
 ``alissa.tools.*`` subtrees into the same namespace at import time.
 
 The SDK's own surface lives here, under ``alissa.sdk``. Tools live under

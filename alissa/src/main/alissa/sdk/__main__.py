@@ -35,12 +35,12 @@ def main() -> None:
                 print(name)
         else:
             print("no alissa.tools.* packages installed")
-            print("try: pip install 'alissa[tools.github.reviewloop]'")
+            print("try: pip install 'alissa[tools.github.revloop]'")
         return
 
     print(f"alissa {__version__}")
     print("the Alissa Python SDK — anchors the 'alissa' namespace")
-    print("install tools via extras, e.g.: pip install 'alissa[tools.github.reviewloop]'")
+    print("install tools via extras, e.g.: pip install 'alissa[tools.github.revloop]'")
     print("list installed tools: alissa-py --tools")
 
 

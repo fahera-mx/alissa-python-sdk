@@ -35,7 +35,7 @@ with open("README.md") as file:
 # Extras are the SDK's curation surface. Each extra pulls in a separately
 # published tool distribution that contributes its own alissa.tools.* subtree;
 # the SDK core itself carries no third-party dependencies. Install one with
-#   pip install 'alissa[tools.github.reviewloop]'
+#   pip install 'alissa[tools.github.revloop]'
 # pip normalizes the dotted extra name, so the dotted spelling above resolves.
 #
 # The curated tools live in the package's `_tools.py` so the extras and the

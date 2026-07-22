@@ -32,15 +32,20 @@ and the one whose extras enumerate the available tools.
 ## Install
 
 ```sh
-pip install alissa                        # SDK core only, zero third-party deps
-pip install 'alissa[tools.github.reviewloop]'   # + the GitHub review-loop tool
-pip install 'alissa[all]'                 # + every tool extra
+pip install alissa                          # SDK core only, zero third-party deps
+pip install 'alissa[tools.github.revloop]'  # + the GitHub review-loop tool
+pip install 'alissa[all]'                   # + every tool extra
 ```
 
 Each extra pulls in a separately published tool distribution (e.g.
 `alissa-tools-github-reviewloop`), which merges its `alissa.tools.*` packages
 into the namespace. pip normalizes the dotted extra name, so
-`alissa[tools.github.reviewloop]` resolves.
+`alissa[tools.github.revloop]` resolves.
+
+Extra names are decoupled from distribution names by the curated registry, so
+they need not match: `tools.github.revloop` currently pulls
+`alissa-tools-github-reviewloop`. That package will be renamed to `revloop`
+later (to pair with a planned `devloop`); only the registry changes when it does.
 
 ### Editable / development install
 
