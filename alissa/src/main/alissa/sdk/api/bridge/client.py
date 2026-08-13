@@ -21,9 +21,10 @@ reading the queue, tailing a job, and operating a row by hand.
 """
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence, TypeVar
 
 from ..client import ApiClient, encode_path
+from ..errors import TransportError
 from .models import (
     ExecutorCapabilities,
     ExecutorHeartbeat,
@@ -45,6 +46,38 @@ BRIDGE_PREFIX = "/v1/bridge"
 
 #: The only executor kind this contract accepts (``z.literal("alissa-code")``).
 EXECUTOR_KIND = "alissa-code"
+
+_Model = TypeVar("_Model")
+
+
+def _decoded(build: Callable[[Mapping[str, Any]], _Model], payload: Any, endpoint: str) -> _Model:
+    """Build a model from a decoded body, keeping every failure an ``AlissaError``.
+
+    The models index their required fields directly (``payload["jobId"]``), so a
+    drift between the server's shape and the schemas these were written from
+    would escape as a ``KeyError`` or ``TypeError`` from inside ``from_wire`` —
+    neither of which is an :class:`~alissa.sdk.api.errors.AlissaError`, so the
+    ``except AlissaError`` pattern this package documents would not catch it.
+    Shape drift is the one residual risk on this surface; funnel it into
+    :class:`~alissa.sdk.api.errors.TransportError`, which already means "the
+    response was not what the contract says".
+    """
+    if not isinstance(payload, Mapping):
+        raise TransportError(f"{endpoint}: expected a JSON object, got {type(payload).__name__}.")
+    try:
+        return build(payload)
+    except KeyError as exc:
+        raise TransportError(f"{endpoint}: the response is missing {exc}.") from exc
+    except (TypeError, ValueError) as exc:
+        raise TransportError(f"{endpoint}: the response did not match the expected shape: {exc}") from exc
+
+
+def _unwrapped(payload: Any, key: str, endpoint: str) -> Mapping[str, Any]:
+    """Pull the single-object envelope key some responses wrap their row in."""
+    inner = payload.get(key) if isinstance(payload, Mapping) else None
+    if not isinstance(inner, Mapping):
+        raise TransportError(f"{endpoint}: the response carries no {key!r} object.")
+    return inner
 
 
 class BridgeClient:
@@ -106,7 +139,11 @@ class BridgeClient:
             "workerName": worker_name,
             "capabilities": capabilities.to_wire() if capabilities is not None else None,
         }
-        return ExecutorRegistration.from_wire(self.client.post(f"{BRIDGE_PREFIX}/executors", body=payload))
+        return _decoded(
+            ExecutorRegistration.from_wire,
+            self.client.post(f"{BRIDGE_PREFIX}/executors", body=payload),
+            "POST /v1/bridge/executors",
+        )
 
     def list_executors(self) -> tuple[ExecutorSummary, ...]:
         """``GET /v1/bridge/executors`` — this user's executors.
@@ -116,7 +153,8 @@ class BridgeClient:
         """
         payload = self.client.get(f"{BRIDGE_PREFIX}/executors")
         rows = payload.get("executors") if isinstance(payload, Mapping) else None
-        return tuple(ExecutorSummary.from_wire(row) for row in (rows or ()))
+        endpoint = "GET /v1/bridge/executors"
+        return tuple(_decoded(ExecutorSummary.from_wire, row, endpoint) for row in (rows or ()))
 
     def heartbeat_executor(self, executor_id: str) -> ExecutorHeartbeat:
         """``POST /v1/bridge/executors/{id}/heartbeat`` — report this executor alive.
@@ -129,7 +167,11 @@ class BridgeClient:
         # An empty JSON object rather than no body at all: the route reads
         # nothing from it, but a bodyless POST is the kind of request proxies
         # and body parsers disagree about.
-        return ExecutorHeartbeat.from_wire(self.client.post(path, body={}))
+        return _decoded(
+            ExecutorHeartbeat.from_wire,
+            self.client.post(path, body={}),
+            "POST /v1/bridge/executors/{id}/heartbeat",
+        )
 
     def stop_executor(self, executor_id: str, *, reason: str | None = None) -> ExecutorStopResult:
         """``POST /v1/bridge/executors/{id}/stop`` — close it and release its jobs.
@@ -140,7 +182,11 @@ class BridgeClient:
         Idempotent: a repeat call releases nothing.
         """
         path = f"{BRIDGE_PREFIX}/executors/{encode_path(executor_id)}/stop"
-        return ExecutorStopResult.from_wire(self.client.post(path, body={"reason": reason}))
+        return _decoded(
+            ExecutorStopResult.from_wire,
+            self.client.post(path, body={"reason": reason}),
+            "POST /v1/bridge/executors/{id}/stop",
+        )
 
     # ── Jobs (§5.2) ──────────────────────────────────────────────────────────
 
@@ -168,7 +214,11 @@ class BridgeClient:
             "status": ",".join(statuses) if statuses else None,
             "limit": limit,
         }
-        return JobFeed.from_wire(self.client.get(f"{BRIDGE_PREFIX}/jobs", query=query))
+        return _decoded(
+            JobFeed.from_wire,
+            self.client.get(f"{BRIDGE_PREFIX}/jobs", query=query),
+            "GET /v1/bridge/jobs",
+        )
 
     def get_job(self, job_id: str) -> JobDetail:
         """``GET /v1/bridge/jobs/{jobId}`` — one job, with lifecycle timing.
@@ -177,7 +227,9 @@ class BridgeClient:
         ``resumed``, or a job you lost track of mid-run. Carries
         ``cancel_requested`` and the full timing the feed omits.
         """
-        return JobDetail.from_wire(self.client.get(f"{BRIDGE_PREFIX}/jobs/{encode_path(job_id)}")["job"])
+        endpoint = "GET /v1/bridge/jobs/{jobId}"
+        payload = self.client.get(f"{BRIDGE_PREFIX}/jobs/{encode_path(job_id)}")
+        return _decoded(JobDetail.from_wire, _unwrapped(payload, "job", endpoint), endpoint)
 
     def claim_job(self, job_id: str, *, executor_id: str, consumer_id: str, claim_seq: int) -> JobClaim:
         """``POST /v1/bridge/jobs/{id}/claim`` — compare-and-swap on ``claimSeq``.
@@ -195,7 +247,7 @@ class BridgeClient:
         """
         path = f"{BRIDGE_PREFIX}/jobs/{encode_path(job_id)}/claim"
         body = {"executorId": executor_id, "consumerId": consumer_id, "claimSeq": claim_seq}
-        return JobClaim.from_wire(self.client.post(path, body=body))
+        return _decoded(JobClaim.from_wire, self.client.post(path, body=body), "POST /v1/bridge/jobs/{id}/claim")
 
     def start_job(
         self,
@@ -217,7 +269,7 @@ class BridgeClient:
             "executorSessionId": executor_session_id,
             "tmuxSession": tmux_session,
         }
-        return JobStartAck.from_wire(self.client.post(path, body=body))
+        return _decoded(JobStartAck.from_wire, self.client.post(path, body=body), "POST /v1/bridge/jobs/{id}/start")
 
     def progress_job(self, job_id: str, *, consumer_id: str, note: str | None = None) -> JobProgressAck:
         """``POST /v1/bridge/jobs/{id}/progress`` — beat a running job, observe a cancel.
@@ -228,7 +280,11 @@ class BridgeClient:
         (``coalesced``). It is not a log stream.
         """
         path = f"{BRIDGE_PREFIX}/jobs/{encode_path(job_id)}/progress"
-        return JobProgressAck.from_wire(self.client.post(path, body={"consumerId": consumer_id, "note": note}))
+        return _decoded(
+            JobProgressAck.from_wire,
+            self.client.post(path, body={"consumerId": consumer_id, "note": note}),
+            "POST /v1/bridge/jobs/{id}/progress",
+        )
 
     def fulfill_job(self, job_id: str, *, consumer_id: str, result: JobResult) -> JobFulfillAck:
         """``POST /v1/bridge/jobs/{id}/fulfill`` — deliver the result.
@@ -238,7 +294,11 @@ class BridgeClient:
         """
         path = f"{BRIDGE_PREFIX}/jobs/{encode_path(job_id)}/fulfill"
         body = {"consumerId": consumer_id, "result": result.to_wire()}
-        return JobFulfillAck.from_wire(self.client.post(path, body=body))
+        return _decoded(
+            JobFulfillAck.from_wire,
+            self.client.post(path, body=body),
+            "POST /v1/bridge/jobs/{id}/fulfill",
+        )
 
     def fail_job(
         self,
@@ -266,4 +326,4 @@ class BridgeClient:
             "retryable": retryable,
             "failureKind": failure_kind,
         }
-        return JobFailAck.from_wire(self.client.post(path, body=body))
+        return _decoded(JobFailAck.from_wire, self.client.post(path, body=body), "POST /v1/bridge/jobs/{id}/fail")

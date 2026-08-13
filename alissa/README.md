@@ -95,6 +95,17 @@ second HTTP stack in this SDK.
 Configuration: `ALISSA_API_TOKEN` (or `token=`) and `ALISSA_BASE` (or
 `base_url=`, default `https://api.alissa.app`).
 
+> **On the base-URL variable.** The Node `alissa` CLI spells this knob
+> `ALISSA_API_BASE`, not `ALISSA_BASE`. This SDK reads `ALISSA_BASE` first
+> (matching its Python siblings) and falls back to `ALISSA_API_BASE`, so
+> exporting either one points the CLI *and* the SDK at the same deployment.
+> Set both and `ALISSA_BASE` wins.
+
+Requests never follow redirects: the API is a fixed JSON surface with no reason
+to issue one, and `urllib` would copy the `Authorization` header onto a
+cross-origin `Location`. An unexpected 3xx surfaces as an `ApiError` with code
+`HTTP_302` (or whichever status arrived) rather than a silent off-origin call.
+
 ### Local Bridge queue mode (`alissa.sdk.api.bridge`)
 
 The `/v1/bridge` executor and job surface: four executor endpoints (register,

@@ -30,9 +30,19 @@ from .errors import ApiError, MissingTokenError, TransportError, error_from_enve
 #: Where the Alissa REST API lives. Every path is versioned under ``/v1``.
 DEFAULT_BASE_URL = "https://api.alissa.app"
 
-#: Environment variables the client falls back to, matching the `alissa` CLI.
+#: Bearer token variable, matching the `alissa` CLI and every other Alissa tool.
 ENV_TOKEN = "ALISSA_API_TOKEN"
+
+#: API root variable. ``ALISSA_BASE`` is the Python-side spelling — it is what
+#: the sibling `alissa-tools-github-orcloop` client reads, and what this SDK
+#: documents.
 ENV_BASE_URL = "ALISSA_BASE"
+
+#: The Node `alissa` CLI spells the same knob differently: ``cli/src/config.ts``
+#: resolves ``$ALISSA_API_BASE``. Honoured as a fallback so that pointing a
+#: machine at a staging deployment the CLI's way moves this SDK with it, instead
+#: of leaving it talking to production with a live token.
+ENV_BASE_URL_CLI = "ALISSA_API_BASE"
 
 USER_AGENT = f"alissa-python-sdk/{_sdk_version.value}"
 
@@ -73,11 +83,37 @@ class Transport(Protocol):
         ...
 
 
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuse 3xx instead of following it — the token must not leave the origin.
+
+    CPython's redirect handler rebuilds the request with **every** header
+    copied across (only ``content-length``/``content-type`` are dropped), and
+    it does so even when the redirect crosses to another host — so following a
+    3xx would hand the user's bearer token to whatever origin the ``Location``
+    names. ``requests`` strips ``Authorization`` on a cross-host redirect for
+    exactly this reason; ``urllib`` does not, and stdlib-only means inheriting
+    that.
+
+    The API is a fixed JSON surface with no reason to redirect, so the tight
+    answer is to not follow at all. Returning ``None`` leaves the 3xx as an
+    ``HTTPError``, which :meth:`UrllibTransport.send` hands back as a normal
+    response — an unexpected redirect surfaces as a visible ``HTTP_3xx``
+    :class:`~alissa.sdk.api.errors.ApiError` rather than silently succeeding
+    somewhere else.
+    """
+
+    def redirect_request(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
 class UrllibTransport:
     """The default transport — :mod:`urllib.request`, no third-party dependency."""
 
     def __init__(self, timeout: float = DEFAULT_TIMEOUT) -> None:
         self.timeout = timeout
+        #: Deliberately not the module-level default opener: this one does not
+        #: follow redirects (see :class:`_NoRedirectHandler`).
+        self.opener = urllib.request.build_opener(_NoRedirectHandler)
 
     def send(self, request: HttpRequest) -> HttpResponse:
         req = urllib.request.Request(
@@ -87,7 +123,7 @@ class UrllibTransport:
             method=request.method,
         )
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+            with self.opener.open(req, timeout=self.timeout) as response:
                 return HttpResponse(
                     status=response.status,
                     body=response.read(),
@@ -111,8 +147,8 @@ class ApiClient:
     """Authenticated JSON access to the Alissa REST API.
 
     :param token: personal access token; falls back to ``$ALISSA_API_TOKEN``.
-    :param base_url: API root; falls back to ``$ALISSA_BASE``, then
-        :data:`DEFAULT_BASE_URL`.
+    :param base_url: API root; falls back to ``$ALISSA_BASE``, then to the
+        `alissa` CLI's ``$ALISSA_API_BASE``, then :data:`DEFAULT_BASE_URL`.
     :param timeout: seconds, applied by the default transport.
     :param transport: inject to bypass the network (tests, recorded fixtures).
 
@@ -130,7 +166,12 @@ class ApiClient:
         transport: Transport | None = None,
     ) -> None:
         self._token = token
-        self.base_url = (base_url or os.environ.get(ENV_BASE_URL) or DEFAULT_BASE_URL).rstrip("/")
+        self.base_url = (
+            base_url
+            or os.environ.get(ENV_BASE_URL)
+            or os.environ.get(ENV_BASE_URL_CLI)
+            or DEFAULT_BASE_URL
+        ).rstrip("/")
         self.transport: Transport = transport or UrllibTransport(timeout=timeout)
 
     @property

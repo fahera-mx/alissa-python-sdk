@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from alissa.sdk.api import ApiClient, DEFAULT_BASE_URL, MissingTokenError, TransportError
-from alissa.sdk.api.client import ENV_BASE_URL, ENV_TOKEN, USER_AGENT, encode_path
+from alissa.sdk.api.client import ENV_BASE_URL, ENV_BASE_URL_CLI, ENV_TOKEN, USER_AGENT, encode_path
 from alissa.sdk.api.errors import ApiError
 
 from conftest import TEST_BASE_URL, TEST_TOKEN, RecordedTransport
@@ -18,6 +18,7 @@ from conftest import TEST_BASE_URL, TEST_TOKEN, RecordedTransport
 
 def test_defaults_to_the_public_api(monkeypatch):
     monkeypatch.delenv(ENV_BASE_URL, raising=False)
+    monkeypatch.delenv(ENV_BASE_URL_CLI, raising=False)
     assert ApiClient(token="t").base_url == DEFAULT_BASE_URL
     assert DEFAULT_BASE_URL == "https://api.alissa.app"
 
@@ -25,6 +26,27 @@ def test_defaults_to_the_public_api(monkeypatch):
 def test_base_url_comes_from_the_environment_and_loses_its_trailing_slash(monkeypatch):
     monkeypatch.setenv(ENV_BASE_URL, "https://api.staging.invalid/")
     assert ApiClient(token="t").base_url == "https://api.staging.invalid"
+
+
+def test_the_cli_spelling_of_the_base_url_is_honoured_as_a_fallback(monkeypatch):
+    # The Node `alissa` CLI reads $ALISSA_API_BASE. Ignoring it would let an
+    # operator point their machine at staging the documented CLI way while this
+    # SDK kept talking to production with a live token.
+    monkeypatch.delenv(ENV_BASE_URL, raising=False)
+    monkeypatch.setenv(ENV_BASE_URL_CLI, "https://api.staging.invalid")
+    assert ApiClient(token="t").base_url == "https://api.staging.invalid"
+
+
+def test_the_python_spelling_wins_when_both_are_set(monkeypatch):
+    monkeypatch.setenv(ENV_BASE_URL, "https://python.invalid")
+    monkeypatch.setenv(ENV_BASE_URL_CLI, "https://cli.invalid")
+    assert ApiClient(token="t").base_url == "https://python.invalid"
+
+
+def test_an_explicit_base_url_wins_over_both_variables(monkeypatch):
+    monkeypatch.setenv(ENV_BASE_URL, "https://python.invalid")
+    monkeypatch.setenv(ENV_BASE_URL_CLI, "https://cli.invalid")
+    assert ApiClient(token="t", base_url="https://explicit.invalid").base_url == "https://explicit.invalid"
 
 
 def test_token_falls_back_to_the_environment(monkeypatch):

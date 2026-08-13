@@ -192,7 +192,7 @@ class ExecutorStopResult:
             executor_id=payload["executorId"],
             found=bool(payload.get("found")),
             already_ended=bool(payload.get("alreadyEnded")),
-            released_jobs=payload.get("releasedJobs", 0),
+            released_jobs=payload["releasedJobs"],
         )
 
 
