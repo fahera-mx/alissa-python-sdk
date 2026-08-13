@@ -1,0 +1,24 @@
+{
+  "job": {
+    "jobId": "j57bridge0003",
+    "claimSeq": 12,
+    "attempt": 3,
+    "maxAttempts": 3,
+    "status": "failed",
+    "spec": {
+      "title": "A job the sweep collected",
+      "prompt": "Do the thing.",
+      "deliverable": {
+        "kind": "patch",
+        "description": "A patch file."
+      },
+      "acceptance": []
+    },
+    "createdAt": 1786490000000,
+    "pendingExpiresAt": 1786493600000,
+    "cancelRequested": true,
+    "error": "the executor stopped answering",
+    "failureKind": "executor_lost",
+    "completedAt": 1786494000000
+  }
+}

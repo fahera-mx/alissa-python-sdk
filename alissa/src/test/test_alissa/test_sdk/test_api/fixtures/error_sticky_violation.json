@@ -1,0 +1,6 @@
+{
+  "error": "STICKY_VIOLATION",
+  "message": "Job is sticky to another executor.",
+  "stickyExecutorId": "mac-mini",
+  "status": "pending"
+}

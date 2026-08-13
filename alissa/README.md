@@ -85,6 +85,57 @@ probing each through the import machinery — so it is correct for both wheel an
 editable installs. The curated set lives in `src/main/alissa/sdk/_tools.py`, the
 same registry `setup.py` builds the extras from.
 
+## API bindings (`alissa.sdk.api`)
+
+Typed access to the Alissa REST API — stdlib-only, like the rest of the core.
+One `ApiClient` owns the base URL, the bearer token, JSON and the error
+envelope; each API surface is a binding module on top of it, so there is never a
+second HTTP stack in this SDK.
+
+Configuration: `ALISSA_API_TOKEN` (or `token=`) and `ALISSA_BASE` (or
+`base_url=`, default `https://api.alissa.app`).
+
+### Local Bridge queue mode (`alissa.sdk.api.bridge`)
+
+The `/v1/bridge` executor and job surface: four executor endpoints (register,
+list, heartbeat, stop) and seven job endpoints (feed, detail, claim, start,
+progress, fulfill, fail).
+
+**Bindings only.** The executor *daemon* — polling, claim state machine, tmux —
+is the Node `alissa` CLI's, and none of it lives here. This module is typed
+request/response plumbing for observers and tooling.
+
+```python
+from alissa.sdk.api import BridgeClient
+
+bridge = BridgeClient()                        # token from $ALISSA_API_TOKEN
+
+# Which machines are registered, and are they alive?
+for executor in bridge.list_executors():
+    print(executor.executor_id, executor.status, executor.last_heartbeat_at)
+
+# Tail one job's status.
+job = bridge.get_job("j57bridge0001")
+print(job.spec.title, job.status, f"attempt {job.attempt}/{job.max_attempts}")
+print(job.progress_note or job.error or "")
+```
+
+Errors are branchable by **code**, never by message text. The queue's four 409s
+share one base, because they all mean *re-read the row and retry* rather than
+*give up*:
+
+```python
+from alissa.sdk.api import RetryAfterReadError, StaleConsumerError
+
+try:
+    claim = bridge.claim_job(job_id, executor_id=executor_id,
+                             consumer_id=nonce, claim_seq=claim_seq)
+except StaleConsumerError:
+    pass                       # a newer attempt owns this row — stop
+except RetryAfterReadError as err:
+    print(err.code, err.observed_status)      # re-poll, do not spin
+```
+
 ## Shared utilities (`alissa.utils`)
 
 Helpers the SDK factors out so every `alissa.*` distribution reuses one

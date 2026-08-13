@@ -1,0 +1,4 @@
+{
+  "error": "VALIDATION_ERROR",
+  "message": "limit must be an integer between 1 and 50."
+}

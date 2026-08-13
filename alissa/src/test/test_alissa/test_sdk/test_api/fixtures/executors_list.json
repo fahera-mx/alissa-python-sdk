@@ -1,0 +1,40 @@
+{
+  "executors": [
+    {
+      "executorId": "macbook-pro-work",
+      "kind": "alissa-code",
+      "label": "MacBook Pro (work)",
+      "hostname": "mbp-work.local",
+      "cliVersion": "1.4.2",
+      "pollSeconds": 15,
+      "workerName": "worker-mbp",
+      "capabilities": {
+        "workspaceRoots": [
+          "/workspace"
+        ],
+        "maxConcurrentJobs": 2,
+        "handoffs": [
+          "claude",
+          "codex"
+        ],
+        "tags": [
+          "gpu"
+        ]
+      },
+      "startedAt": 1786500000000,
+      "lastHeartbeatAt": 1786500600000,
+      "status": "active"
+    },
+    {
+      "executorId": "retired-mini",
+      "kind": "alissa-code",
+      "label": "Mac mini",
+      "hostname": "mini.local",
+      "startedAt": 1786400000000,
+      "lastHeartbeatAt": 1786400900000,
+      "endedAt": 1786401000000,
+      "endReason": "executor_stopped",
+      "status": "executor_stopped"
+    }
+  ]
+}

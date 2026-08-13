@@ -1,0 +1,69 @@
+{
+  "jobs": [
+    {
+      "jobId": "j57bridge0002",
+      "claimSeq": 4,
+      "attempt": 1,
+      "maxAttempts": 3,
+      "status": "pending",
+      "spec": {
+        "title": "Wire the queue-mode bindings",
+        "prompt": "Implement the typed bindings described in the linked design doc.",
+        "deliverable": {
+          "kind": "pull_request",
+          "description": "A draft PR against main."
+        },
+        "acceptance": [
+          {
+            "id": "surface",
+            "description": "All eleven endpoints bound.",
+            "type": "manual"
+          },
+          {
+            "id": "tests",
+            "description": "Unit tests pass offline.",
+            "type": "automated"
+          }
+        ],
+        "references": [
+          {
+            "kind": "task",
+            "ref": "TASK-1115046778",
+            "label": "Origin task"
+          },
+          {
+            "kind": "repo",
+            "ref": "fahera-mx/alissa-python-sdk"
+          }
+        ],
+        "workspaceRoot": "/workspace",
+        "handoff": "claude",
+        "env": [
+          "ALISSA_API_TOKEN"
+        ]
+      },
+      "createdAt": 1786500000000,
+      "pendingExpiresAt": 1786503600000
+    },
+    {
+      "jobId": "j57bridge0001",
+      "claimSeq": 9,
+      "attempt": 2,
+      "maxAttempts": 3,
+      "status": "running",
+      "spec": {
+        "title": "Tail a job",
+        "prompt": "Report the queue's state.",
+        "deliverable": {
+          "kind": "report",
+          "description": "A short status report."
+        },
+        "acceptance": []
+      },
+      "createdAt": 1786499000000,
+      "pendingExpiresAt": 1786502600000,
+      "consumerId": "consumer-a1"
+    }
+  ],
+  "beat": "touched"
+}

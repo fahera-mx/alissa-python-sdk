@@ -1,0 +1,6 @@
+{
+  "error": "CAS_CONFLICT",
+  "message": "claimSeq mismatch.",
+  "currentClaimSeq": 7,
+  "status": "pending"
+}

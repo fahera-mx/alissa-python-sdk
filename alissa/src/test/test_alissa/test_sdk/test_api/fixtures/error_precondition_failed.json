@@ -1,0 +1,4 @@
+{
+  "error": "PRECONDITION_FAILED",
+  "message": "Executor is closed; re-register before claiming."
+}

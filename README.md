@@ -9,6 +9,24 @@ pip install 'alissa[tools.github.revloop]'       # + a tool, merged into alissa.
 pip install 'alissa[all]'                        # + every tool
 ```
 
+Beyond the namespace, the core ships typed REST bindings under `alissa.sdk.api`
+— a shared client/auth core plus one module per API surface. Today that is
+`alissa.sdk.api.bridge`, the Local Bridge queue-mode executor and job endpoints:
+
+```python
+from alissa.sdk.api import BridgeClient
+
+bridge = BridgeClient()                        # token from $ALISSA_API_TOKEN
+for executor in bridge.list_executors():
+    print(executor.executor_id, executor.status)
+
+job = bridge.get_job("j57bridge0001")
+print(job.spec.title, job.status, f"attempt {job.attempt}/{job.max_attempts}")
+```
+
+See [`alissa/README.md`](./alissa/README.md#api-bindings-alissasdkapi) for the
+error model and the rest of the surface.
+
 ## How ownership works
 
 `alissa` is the anchor distribution: the thing you `pip install`, the top-level
@@ -48,6 +66,7 @@ alissa-python-sdk/
 │   ├── MANIFEST.in
 │   └── src/
 │       ├── main/alissa/sdk/    ← owned leaf: SDK surface (+ plain-text `version` file)
+│       │   └── api/            ← REST bindings: shared client/auth core + per-surface modules
 │       ├── main/alissa/utils/  ← owned leaf: shared helpers (alissa.utils.version)
 │       └── test/test_alissa/   ← mirrors main as test_*
 ├── .github/workflows/          ← style / types / tests / wheel / publish (matrix: alissa)
