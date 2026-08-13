@@ -1,0 +1,5 @@
+{
+  "error": "STALE_CONSUMER",
+  "message": "consumerId does not match the current attempt.",
+  "status": "running"
+}

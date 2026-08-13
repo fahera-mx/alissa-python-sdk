@@ -1,0 +1,18 @@
+{
+  "executorId": "macbook-pro-work",
+  "tookOver": true,
+  "fingerprintChanged": false,
+  "resumed": [
+    {
+      "jobId": "j57bridge0001",
+      "status": "running",
+      "consumerId": "consumer-a1",
+      "attempt": 2
+    },
+    {
+      "jobId": "j57bridge0002",
+      "status": "pending",
+      "attempt": 1
+    }
+  ]
+}

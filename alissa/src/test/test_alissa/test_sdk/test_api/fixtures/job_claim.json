@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "jobId": "j57bridge0002",
+  "claimSeq": 5,
+  "deadlineAt": 1786507200000,
+  "spec": {
+    "title": "Wire the queue-mode bindings",
+    "prompt": "Implement the typed bindings described in the linked design doc.",
+    "deliverable": {
+      "kind": "pull_request",
+      "description": "A draft PR against main."
+    },
+    "acceptance": [
+      {
+        "id": "surface",
+        "description": "All eleven endpoints bound.",
+        "type": "manual"
+      },
+      {
+        "id": "tests",
+        "description": "Unit tests pass offline.",
+        "type": "automated"
+      }
+    ],
+    "references": [
+      {
+        "kind": "task",
+        "ref": "TASK-1115046778",
+        "label": "Origin task"
+      },
+      {
+        "kind": "repo",
+        "ref": "fahera-mx/alissa-python-sdk"
+      }
+    ],
+    "workspaceRoot": "/workspace",
+    "handoff": "claude",
+    "env": [
+      "ALISSA_API_TOKEN"
+    ]
+  }
+}
